@@ -1,0 +1,28 @@
+# Maven / Gradle
+target/
+build/
+out/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+*.class
+*.jar
+*.war
+*.ear
+
+# Output files (reports, logs, screenshots)
+output/
+
+# Test data (generated)
+# testdata/TestData.xlsx
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

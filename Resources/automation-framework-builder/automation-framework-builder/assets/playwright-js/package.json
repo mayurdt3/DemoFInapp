@@ -1,0 +1,24 @@
+{
+  "name": "{{PROJECT_NAME}}",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Playwright (JavaScript) test automation framework using Page Object Model",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:regression": "playwright test --grep @regression",
+    "test:api": "playwright test --grep @api",
+    "test:headed": "HEADLESS=false playwright test",
+    "test:chromium": "BROWSER=chromium playwright test",
+    "test:firefox": "BROWSER=firefox playwright test",
+    "report": "playwright show-report output/reports/html",
+    "testdata": "python3 scripts/make_testdata.py testdata/TestData.xlsx"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "winston": "^3.14.2"
+  }
+}
