@@ -27,8 +27,14 @@ public class SettledBatchesPage extends BasePage {
     @FindBy(css = "[data-testid='report-period']")
     private WebElement reportPeriodLabel;
 
+    @FindBy(css = "[data-testid='filter-mode']")
+    private WebElement filterModeSelect;
+
     @FindBy(css = "[data-testid='filter-year']")
     private WebElement yearSelect;
+
+    @FindBy(css = "[data-testid='filter-month']")
+    private WebElement monthSelect;
 
     @FindBy(css = "[data-testid='filter-apply']")
     private WebElement applyButton;
@@ -88,6 +94,40 @@ public class SettledBatchesPage extends BasePage {
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Failed to get report period", e);
             throw new NotFoundException("Failed to get report period: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Set the report filter to By Month for a specific month and year.
+     *
+     * @param month the month number as string (e.g., "1" for January, "2" for February)
+     * @param year  the year to filter by (e.g., "2026")
+     * @return this page instance for method chaining
+     * @throws ElementException if filter operation fails
+     */
+    public SettledBatchesPage filterByMonth(String month, String year) {
+        try {
+            // Click the mode dropdown
+            click(filterModeSelect);
+            selectByText(filterModeSelect, "By Month");
+
+            // Select the month by value (1-12)
+            selectByValue(monthSelect, month);
+
+            // Select the year
+            selectByText(yearSelect, year);
+
+            // Apply the filter
+            click(applyButton);
+
+            // Wait for table to refresh
+            wait.until(ExpectedConditions.visibilityOf(reportPeriodLabel));
+            LOG.fine("Filtered Settled Batches by month: " + month + ", year: " + year);
+            return this;
+        } catch (Exception e) {
+            LOG.log(Level.SEVERE, "Failed to filter Settled Batches by month/year", e);
+            throw new ElementException(
+                    "Failed to filter by month '" + month + "' and year '" + year + "': " + e.getMessage(), e);
         }
     }
 }

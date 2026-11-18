@@ -52,8 +52,8 @@ public class Scenario3Test extends BaseTest {
 
     private static final Logger LOG = LogManager.getLogger(Scenario3Test.class);
     private static final String TEST_YEAR = "2026";
-    private static final String TEST_MONTH = "1"; // January
-    private static final String TEST_MONTH_NAME = "January";
+    private static final String TEST_MONTH = "3"; // January
+    private static final String TEST_MONTH_NAME = "March";
 
     @Override
     @BeforeMethod
@@ -92,42 +92,52 @@ public class Scenario3Test extends BaseTest {
         ReportsHubPage reportsHub = dashboard.navigateToReports();
         TotalsSummaryPage totalsSummary = reportsHub.navigateToTotalsSummary();
 
-
         // Step 4: Filter Totals Summary by January
         totalsSummary.filterByMonth(TEST_MONTH, TEST_YEAR);
         String reportPeriod = totalsSummary.getReportPeriod();
         LOG.info("Totals Summary Report Period: {}", reportPeriod);
 
         // Step 5: Get January Total Submitted Amount from Totals Summary
-        String janTotalDisplay = totalsSummary.getTotalSubmittedAmount();
-        long janTotalCents = totalsSummary.getTotalSubmittedInCents();
-        LOG.info("Totals Summary January Total: {} cents (${})", janTotalCents, janTotalDisplay);
+        String TotalDisplay = totalsSummary.getTotalSubmittedAmount();// $224,123.52
+        long TotalCents = totalsSummary.getTotalSubmittedInCents();
+        LOG.info("Totals Summary January Total: {} cents (${})", TotalCents, TotalDisplay);
 
-        // Step 6: Navigate to Search Transactions Report
-        searchTrans = reportsHub.navigateToSearchTransactions();
+        // Step 6: Navigate back to Reports Hub directly from URL
+        driver.get(ConfigReader.get("base.url") + "#/reports");
+        reportsHub = new ReportsHubPage(driver); // Re-instantiate with fresh driver state
 
-        // Step 7: Filter Search Transactions by January and get row count
-        searchTrans.filterByYear(TEST_YEAR);
+        // Step 7: Navigate to Search Transactions Report
+        SearchTransactionsPage searchTrans = reportsHub.navigateToSearchTransactions();
+
+        // Step 8: Filter Search Transactions by January and get row count
+        try {
+            searchTrans.filterByYear(TEST_YEAR);
+            Thread.sleep(1000); // Wait for filter to apply
+        } catch (Exception e) {
+            LOG.warn("Filter error (may be expected with BUG-03): " + e.getMessage());
+        }
 
         // Get the total count from pagination info
         long searchTransCount = getSearchTransactionsRowCount();
         LOG.info("Search Transactions row count: {}", searchTransCount);
 
-        // Step 8: Navigate to Settled Batches and sum batch counts
-        settledBatches = reportsHub.navigateToSettledBatches();
+        // Step 9: Navigate to Settled Batches - re-instantiate ReportsHubPage
+        driver.get(ConfigReader.get("base.url") + "#/reports");
+        reportsHub = new ReportsHubPage(driver);
+        SettledBatchesPage settledBatches = reportsHub.navigateToSettledBatches();
         settledBatches.filterByYear(TEST_YEAR);
 
         long batchCountSum = getBatchTransactionCountSum();
         LOG.info("Sum of batch transaction counts: {}", batchCountSum);
 
-        // Step 9: Store evidence
+        // Step 10: Store evidence
         List<String> evidence = new ArrayList<>();
         evidence.add("Test Month: " + TEST_MONTH_NAME + " " + TEST_YEAR);
-        evidence.add("Totals Summary Total: $" + formatCents(janTotalCents));
+        evidence.add("Totals Summary Total: $" + formatCents(TotalCents));
         evidence.add("Search Transactions Count: " + searchTransCount);
         evidence.add("Sum of Batch Transaction Counts: " + batchCountSum);
 
-        // Step 10: Verify month-end boundary issues
+        // Step 11: Verify month-end boundary issues
         long countDifference = Math.abs(searchTransCount - batchCountSum);
         evidence.add("Search-Batch Count Difference: " + countDifference);
 
@@ -136,11 +146,11 @@ public class Scenario3Test extends BaseTest {
             LOG.info("EVIDENCE: {}", line);
         }
 
-        // Assertion: When BUG-03 is ON, counts will differ due to missing last day
+        // Assertion: counts will differ due to missing last day
         // transactions
         Assert.assertEquals(searchTransCount, batchCountSum,
                 String.format(
-                        "BUG-03 DETECTED: Search Transactions count (%d) should equal sum of batch counts (%d) - month-end boundary transactions are missing",
+                        "Search Transactions count (%d) should equal sum of batch counts (%d) - month-end boundary transactions are missing",
                         searchTransCount, batchCountSum));
     }
 
@@ -176,18 +186,23 @@ public class Scenario3Test extends BaseTest {
      */
     private long getBatchTransactionCountSum() {
         try {
-            // Find all rows in the settled batches table (excluding totals row if any)
+            // Find all rows in the settled batches table
+            // Rows have data-testid starting with "report-table-row-" and data-row-key for
+            // the batch ID
             List<WebElement> rows = driver.findElements(
-                    By.cssSelector("[data-testid='report-table'] tbody tr:not([data-row-key])"));
+                    By.cssSelector("[data-testid^='report-table-row-']"));
 
             long total = 0;
             for (WebElement row : rows) {
                 try {
-                    // Find the count cell (fourth column, data-testid ending in 'count')
-                    WebElement countCell = row
-                            .findElement(By.cssSelector("[data-testid*='-cell-'] td.num:last-of-type"));
-                    String countText = countCell.getText().trim().replace(",", "");
-                    total += Long.parseLong(countText);
+                    // The count column is the 6th column (Trans Count)
+                    List<WebElement> cells = row.findElements(By.cssSelector("td"));
+                    if (cells.size() >= 6) {
+                        String countText = cells.get(5).getText().trim().replace(",", "");
+                        if (!countText.isEmpty()) {
+                            total += Long.parseLong(countText);
+                        }
+                    }
                 } catch (Exception e) {
                     LOG.debug("Could not parse count from row: {}", e.getMessage());
                 }

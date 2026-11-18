@@ -33,6 +33,12 @@ public class ReportsHubPage extends BasePage {
     @FindBy(css = "[data-testid='view-report-search-transactions']")
     private WebElement searchTransactionsLink;
 
+    @FindBy(css = "[data-testid='view-report-ach-deposit']")
+    private WebElement achDepositLink;
+
+    @FindBy(css = "[data-testid='view-report-discount-calculator']")
+    private WebElement discountCalculatorLink;
+
     @FindBy(css = "[data-testid='report-period']")
     private WebElement reportPeriodLabel;
 
@@ -107,6 +113,42 @@ public class ReportsHubPage extends BasePage {
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Failed to navigate to Search Transactions", e);
             throw new ElementException("Failed to navigate to Search Transactions: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Navigate to ACH Deposit Report page.
+     * @return new AchDepositPage instance
+     * @throws ElementException if navigation fails
+     */
+    public AchDepositPage navigateToAchDeposit() {
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(achDepositLink));
+            click(achDepositLink);
+            return new AchDepositPage(driver);
+        } catch (ElementException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.log(Level.SEVERE, "Failed to navigate to ACH Deposit", e);
+            throw new ElementException("Failed to navigate to ACH Deposit: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Navigate to Daily Discount Calculator Report page.
+     * @return new DailyDiscountPage instance
+     * @throws ElementException if navigation fails
+     */
+    public DailyDiscountPage navigateToDailyDiscount() {
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(discountCalculatorLink));
+            click(discountCalculatorLink);
+            return new DailyDiscountPage(driver);
+        } catch (ElementException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.log(Level.SEVERE, "Failed to navigate to Daily Discount Calculator", e);
+            throw new ElementException("Failed to navigate to Daily Discount Calculator: " + e.getMessage(), e);
         }
     }
 
